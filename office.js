@@ -531,7 +531,7 @@
       for (const [k, p] of this.people) {
         if (!shown.has(k) && !p.leaving) {
           p.leaving = true;
-          p.mode = 'leave';
+          p.mode = 'work';
           this.release(p);
           p.desk = null;
           this.goTo(p, this.plan.door);
@@ -546,6 +546,47 @@
     }
 
     newPerson(s) {
+      const h = hash(s.key);
+      const door = this.plan.door;
+      let skin = '#f3cfb0', hair = '#1c1c1c', shirt = '#ffffff', pants = '#2a2019';
+      let hairStyle = 0, isCat = false, catColor = null;
+
+      // 使用明確 ID 綁定，完全杜絕編碼亂碼問題
+      if (s.id === 'jwood-0') {
+        // 麻糬：男生，黑白貓耳，白襯衫黑西裝褲
+        skin = '#f7dcc7'; hair = '#1c1c1c'; shirt = '#ffffff'; pants = '#1c1c1c';
+        hairStyle = 0; isCat = true; catColor = '#1c1c1c';
+      } else if (s.id === 'jwood-1') {
+        // 大叔：男生，深棕短髮，沉穩深色襯衫
+        skin = '#e5b38f'; hair = '#4b3020'; shirt = '#3d4a58'; pants = '#2a2a2e'; hairStyle = 3;
+      } else if (s.id === 'jwood-2') {
+        // 沐沐：女生，亞麻淺棕包包頭，粉紅上衣
+        skin = '#f3cfb0'; hair = '#c99a5b'; shirt = '#f4a5ae'; pants = '#ffffff'; hairStyle = 2;
+      } else if (s.id === 'jwood-3') {
+        // 小雅：女生，氣質長髮，莫蘭迪灰綠上衣
+        skin = '#f7dcc7'; hair = '#2a2019'; shirt = '#9ab8a8'; pants = '#4a4a52'; hairStyle = 1;
+      } else if (s.id === 'jwood-4') {
+        // 咪咪：女生，活潑長馬尾，活力黃上衣
+        skin = '#f3cfb0'; hair = '#8a4b2a'; shirt = '#f7d268'; pants = '#3d3550'; hairStyle = 1;
+      } else if (s.id === 'jwood-5') {
+        // 椪柑：女生，橘貓耳，焦糖暖橘毛髮與衣著
+        skin = '#f3cfb0'; hair = '#d97d3e'; shirt = '#e9a87c'; pants = '#fbf0e4';
+        hairStyle = 2; isCat = true; catColor = '#d97d3e';
+      } else {
+        skin = pick(SKIN, h, 3); hair = pick(HAIR, h, 7); pants = pick(PANTS, h, 13);
+        shirt = pick(SHIRT[s.agent] || SHIRT.claude, h, 11); hairStyle = h % 4;
+      }
+
+      return {
+        key: s.key, h, s,
+        skin, hair, pants, shirt, hairStyle, isCat, catColor,
+        phase: (h % 1000) / 1000 * Math.PI * 2,
+        x: door.x, y: door.y,
+        path: [], walkFace: 'front', until: 0, mode: null,
+        placeOnArrive: true, // 初始直接在座位上現身，不從門口排隊
+      };
+    };
+    _old_newPerson(s) {
       const h = hash(s.key);
       const door = this.plan.door;
       const name = s.project || s.title || '';
@@ -1335,6 +1376,14 @@
           c.beginPath(); c.moveTo(-5, hy - 5); c.lineTo(-4.5, hy - 9); c.lineTo(-2, hy - 6); c.fill();
           c.beginPath(); c.moveTo(2, hy - 6); c.lineTo(4.5, hy - 9); c.lineTo(5, hy - 5); c.fill();
         }
+        if (p.isCat) {
+          c.fillStyle = p.catColor || p.hair;
+          c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();
+          c.beginPath(); c.moveTo(1, hy - 6); c.lineTo(5, hy - 11); c.lineTo(6, hy - 4); c.fill();
+          c.fillStyle = '#ffb3c1';
+          c.beginPath(); c.moveTo(-5, hy - 5); c.lineTo(-4.5, hy - 9); c.lineTo(-2, hy - 6); c.fill();
+          c.beginPath(); c.moveTo(2, hy - 6); c.lineTo(4.5, hy - 9); c.lineTo(5, hy - 5); c.fill();
+        }
         c.fillStyle = '#2a2018';
         const sleepy = s.status === 'idle';
         const blink = Math.sin(t * 0.7 + p.phase * 3) > 0.985;
@@ -1350,6 +1399,11 @@
         c.beginPath(); c.arc(0, hy - 0.5, 7.2, 0, Math.PI * 2); c.fill();
         if (p.hairStyle === 2) { c.beginPath(); c.arc(0, hy - 7, 3.2, 0, Math.PI * 2); c.fill(); }
         if (p.hairStyle === 1) c.fillRect(-6, hy, 12, 8);
+        if (p.isCat) {
+          c.fillStyle = p.catColor || p.hair;
+          c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();
+          c.beginPath(); c.moveTo(1, hy - 6); c.lineTo(5, hy - 11); c.lineTo(6, hy - 4); c.fill();
+        }
         if (p.isCat) {
           c.fillStyle = p.catColor || p.hair;
           c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();
@@ -1566,7 +1620,7 @@
       if (!this.visible) return;
       this.step(dt);
       if (this.draw() !== false) {
-        if (++this.framesShown >= 1) this.markReady(true);
+        if (!this.first && ++this.framesShown === 3) this.markReady(true);
         // Capture immediately: a WebGL drawing buffer may be cleared after
         // this task. The overlay and the 3D canvas must be copied together.
         if (this.onFrame) this.onFrame(this);
