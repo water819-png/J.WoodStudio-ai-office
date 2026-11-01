@@ -2,6 +2,11 @@
 
 這裡是 **J. Wood Studio** 創作團隊的虛擬 3D/2D 辦公室日常。
 
+* 🌐 **正式線上網址**：[https://jwoodstudio-ai-office.vercel.app/](https://jwoodstudio-ai-office.vercel.app/)
+* 📦 **GitHub 儲存庫**：[https://github.com/water819-png/J.WoodStudio-ai-office.git](https://github.com/water819-png/J.WoodStudio-ai-office.git)
+* 📋 **專案進度與時空交接指南**：請詳閱 [STATUS.md](./STATUS.md)
+* 🏠 **工作室官方旗艦店**：[https://jwood-studio-web.vercel.app/](https://jwood-studio-web.vercel.app/)
+
 ---
 
 ## 👥 辦公室成員名冊
