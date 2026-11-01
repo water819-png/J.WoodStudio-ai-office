@@ -1,0 +1,12 @@
+{
+  "name": "jwood-ai-office",
+  "version": "1.0.0",
+  "description": "J. Wood Studio - 6 位可愛 AI 員工辦公室 3D 實況展示",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": ["ai-agents", "jwoodstudio", "virtual-office", "3d", "pixel"],
+  "author": "J. Wood Studio",
+  "license": "MIT"
+}
