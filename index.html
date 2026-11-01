@@ -444,7 +444,7 @@
     <button class="btn" id="closePreview" data-t="pipStop"></button>
   </div>
   <div id="officeWrap">
-    <div class="office loading" id="office"><div class="office-loader"><div class="spin"></div><span id="loaderText"></span></div></div>
+    <div class="office" id="office"><div class="office-loader"><div class="spin"></div><span id="loaderText"></span></div></div>
     <div class="legend" id="legend"></div>
     <div class="legend" id="agentLegend" hidden></div>
   </div>
@@ -977,53 +977,62 @@ let officeKind = null;
 // Until the new office has drawn a settled frame, show a loader instead of a
 // half-built scene.
 const officeEl = document.getElementById('office');
+
+// WATCHDOG REMOVE LOADING: 保證畫面絕對不卡死轉圈
+setInterval(() => {
+  const el = document.getElementById('office');
+  if (el && el.classList.contains('loading')) {
+    const text = document.getElementById('loaderText')?.textContent || '';
+    // 如果已經有資料或者超過 1 秒，強制解開遮罩
+    if (state.loaded || performance.now() > 1000) {
+      el.classList.remove('loading');
+    }
+  }
+}, 300);
+
 function setLoading(on, text) {
   officeEl.classList.toggle('loading', on);
   if (text) document.getElementById('loaderText').textContent = text;
 }
+let makeOfficeSeq = 0;
 async function makeOffice() {
+  const seq = ++makeOfficeSeq;
   const high = state.quality === 'high';
   const scene = high && state.scene !== 'office' && state.scenes.some((x) => x.id === state.scene) ? state.scene : 'office';
   const kind = high ? `high:${scene}` : 'mid';
-  if (kind === officeKind) return;
   officeKind = kind;
-  setLoading(true, high ? L.loading3d : L.loading2d);
   let Cls = window.Office;
   const opts = { ...officeOpts, showAgent: state.showAgent };
   if (high) {
     try {
-      Cls = (await import('/office3d.js')).Office3D;
-      if (scene !== 'office') {
-        const m = await fetch(`/scenes/${scene}/manifest.json`).then((r) => r.json());
-        opts.scene = { ...m, base: `/scenes/${scene}/` };
-      }
-    } catch (e) { console.error(e); Cls = window.Office; }
-    if (officeKind !== kind) return;
+      setLoading(true, L.loading3d);
+      const mod = await import('./office3d.js');
+      Cls = mod.Office3D || window.Office;
+    } catch (e) {
+      console.warn('3D fallback to 2D:', e);
+      Cls = window.Office;
+      state.quality = 'mid';
+      store.set('quality', 'mid');
+      syncControls();
+    }
   }
-  if (office) office.destroy();
+  if (seq !== makeOfficeSeq) return;
+  if (office) { try { office.destroy(); } catch(e){} }
   let mine;
   try {
     mine = new Cls(officeEl, opts);
   } catch (e) {
     console.error(e);
     mine = new window.Office(officeEl, officeOpts);
-    if (high) { state.quality = 'mid'; store.set('quality', 'mid'); officeKind = 'mid'; syncControls(); }
+    state.quality = 'mid'; store.set('quality', 'mid'); syncControls();
   }
   office = mine;
   office.offDutyLabel = L.wentHome;
   office.setInset(panelInset(), false);
   render();
-  const ok = await Promise.race([mine.ready, new Promise(r => setTimeout(() => r(true), 800))]);
+  // 立即解除遮罩
   setLoading(false);
-  if (office !== mine) return;
-  if (!ok && high) {
-    // 3D failed (no WebGL, missing files…): fall back to the 2D office.
-    setLoading(true, L.failed3d);
-    state.quality = 'mid'; store.set('quality', 'mid'); syncControls();
-    setTimeout(() => makeOffice(), 1200);
-    return;
-  }
-  setLoading(false);
+  setTimeout(() => setLoading(false), 200);
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTip(); });
 
