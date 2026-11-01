@@ -465,9 +465,10 @@
 <div class="conn" id="conn" data-t="disconnected"></div>
 <div class="tip" id="tip"></div>
 <div class="ver" id="ver"></div>
-<script src="/i18n.js"></script>
-<script src="/office.js"></script>
-<script src="/popout.js"></script>
+<script src="i18n.js"></script>
+<script src="office.js"></script>
+<script src="jwood-sim.js"></script>
+<script src="popout.js"></script>
 
 <script>
 // Language: your pick in the 🌐 menu, else the language of your prompts
@@ -817,10 +818,46 @@ function chime(kind) {
 }
 
 function connect() {
-  const es = new EventSource('/events');
   const conn = document.getElementById('conn');
-  es.onmessage = (e) => { conn.classList.remove('on'); onData(JSON.parse(e.data)); };
-  es.onerror = () => conn.classList.add('on');
+  function startSimulator() {
+    if (conn) conn.classList.remove('on');
+    if (!window.jwoodSimInstance && window.JWoodSimulator) {
+      window.jwoodSimInstance = new window.JWoodSimulator(onData);
+      window.jwoodSimInstance.start();
+    }
+  }
+
+  // 如果是在 Vercel 或外部公開網址上，直接啟動模擬器自轉！
+  if (!location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+    startSimulator();
+    return;
+  }
+
+  let hasConnected = false;
+  try {
+    const es = new EventSource('/events');
+    es.onmessage = (e) => {
+      hasConnected = true;
+      if (conn) conn.classList.remove('on');
+      onData(JSON.parse(e.data));
+    };
+    es.onerror = () => {
+      if (!hasConnected) {
+        try { es.close(); } catch(err){}
+        startSimulator();
+      } else {
+        if (conn) conn.classList.add('on');
+      }
+    };
+    setTimeout(() => {
+      if (!hasConnected) {
+        try { es.close(); } catch(err){}
+        startSimulator();
+      }
+    }, 1500);
+  } catch (err) {
+    startSimulator();
+  }
 }
 
 // Native disclosure keeps settings keyboard-accessible without a modal focus trap.
