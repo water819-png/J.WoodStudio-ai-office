@@ -520,8 +520,16 @@
         if (isWorker) {
           this.release(p);
           const desk = desks[this.deskOf.get(s.key)];
-          if (p.desk !== desk || p.mode !== 'work') { p.desk = desk; this.goTo(p, desk.seat); }
+          p.desk = desk;
           p.mode = 'work';
+          if (p.placeOnArrive || !p.x || !p.y || isNaN(p.x) || (p.x === this.plan.door.x && p.y === this.plan.door.y)) {
+            p.x = desk.seat.x;
+            p.y = desk.seat.y;
+            p.path = [];
+            p.placeOnArrive = false;
+          } else if (p.desk !== desk) {
+            this.goTo(p, desk.seat);
+          }
         } else {
           if (p.mode !== 'wander') { p.mode = 'wander'; p.desk = null; p.poi = null; p.until = 0; }
           // Someone started working at the desk this one was napping on.
@@ -583,46 +591,7 @@
         phase: (h % 1000) / 1000 * Math.PI * 2,
         x: door.x, y: door.y,
         path: [], walkFace: 'front', until: 0, mode: null,
-        placeOnArrive: true, // 初始直接在座位上現身，不從門口排隊
-      };
-    };
-    _old_newPerson(s) {
-      const h = hash(s.key);
-      const door = this.plan.door;
-      const name = s.project || s.title || '';
-      let skin = pick(SKIN, h, 3), hair = pick(HAIR, h, 7), pants = pick(PANTS, h, 13);
-      let shirt = pick(SHIRT[s.agent] || SHIRT.claude, h, 11);
-      let hairStyle = h % 4, isCat = false, catColor = null;
-
-      if (name.includes('麻糬')) {
-        // 麻糬：黑白貓 / 男生！黑髮白襯衫黑褲
-        skin = '#f7dcc7'; hair = '#1c1c1c'; shirt = '#ffffff'; pants = '#1c1c1c'; hairStyle = 0;
-        isCat = true; catColor = '#1c1c1c';
-      } else if (name.includes('大叔')) {
-        // 大叔：男生！成熟深棕短髮
-        skin = '#e5b38f'; hair = '#4b3020'; shirt = '#3d4a58'; pants = '#2a2a2e'; hairStyle = 3;
-      } else if (name.includes('沐沐')) {
-        // 沐沐：女生！甜美包包頭
-        skin = '#f3cfb0'; hair = '#c99a5b'; shirt = '#f4a5ae'; pants = '#ffffff'; hairStyle = 2;
-      } else if (name.includes('小雅')) {
-        // 小雅：女生！氣質長髮
-        skin = '#f7dcc7'; hair = '#2a2019'; shirt = '#9ab8a8'; pants = '#4a4a52'; hairStyle = 1;
-      } else if (name.includes('咪咪')) {
-        // 咪咪：女生！活潑馬尾女生
-        skin = '#f3cfb0'; hair = '#8a4b2a'; shirt = '#f7d268'; pants = '#3d3550'; hairStyle = 1;
-      } else if (name.includes('椪柑')) {
-        // 椪柑：橘貓 / 女生！橘暖色毛髮、可愛包包頭、橘貓耳朵
-        skin = '#f3cfb0'; hair = '#d97d3e'; shirt = '#e9a87c'; pants = '#fbf0e4'; hairStyle = 2;
-        isCat = true; catColor = '#d97d3e';
-      }
-
-      return {
-        key: s.key, h, s,
-        skin, hair, pants, shirt, hairStyle, isCat, catColor,
-        phase: (h % 1000) / 1000 * Math.PI * 2,
-        x: door.x, y: door.y,
-        path: [], walkFace: 'front', until: 0, mode: null,
-        placeOnArrive: this.first,
+        placeOnArrive: true,
       };
     }
 
@@ -1376,14 +1345,6 @@
           c.beginPath(); c.moveTo(-5, hy - 5); c.lineTo(-4.5, hy - 9); c.lineTo(-2, hy - 6); c.fill();
           c.beginPath(); c.moveTo(2, hy - 6); c.lineTo(4.5, hy - 9); c.lineTo(5, hy - 5); c.fill();
         }
-        if (p.isCat) {
-          c.fillStyle = p.catColor || p.hair;
-          c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();
-          c.beginPath(); c.moveTo(1, hy - 6); c.lineTo(5, hy - 11); c.lineTo(6, hy - 4); c.fill();
-          c.fillStyle = '#ffb3c1';
-          c.beginPath(); c.moveTo(-5, hy - 5); c.lineTo(-4.5, hy - 9); c.lineTo(-2, hy - 6); c.fill();
-          c.beginPath(); c.moveTo(2, hy - 6); c.lineTo(4.5, hy - 9); c.lineTo(5, hy - 5); c.fill();
-        }
         c.fillStyle = '#2a2018';
         const sleepy = s.status === 'idle';
         const blink = Math.sin(t * 0.7 + p.phase * 3) > 0.985;
@@ -1399,11 +1360,6 @@
         c.beginPath(); c.arc(0, hy - 0.5, 7.2, 0, Math.PI * 2); c.fill();
         if (p.hairStyle === 2) { c.beginPath(); c.arc(0, hy - 7, 3.2, 0, Math.PI * 2); c.fill(); }
         if (p.hairStyle === 1) c.fillRect(-6, hy, 12, 8);
-        if (p.isCat) {
-          c.fillStyle = p.catColor || p.hair;
-          c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();
-          c.beginPath(); c.moveTo(1, hy - 6); c.lineTo(5, hy - 11); c.lineTo(6, hy - 4); c.fill();
-        }
         if (p.isCat) {
           c.fillStyle = p.catColor || p.hair;
           c.beginPath(); c.moveTo(-6, hy - 4); c.lineTo(-5, hy - 11); c.lineTo(-1, hy - 6); c.fill();

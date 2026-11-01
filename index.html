@@ -1355,6 +1355,12 @@ const GEAR = '<svg class="ui-ico" viewBox="0 0 24 24" aria-hidden="true"><circle
 async function loadConvo(s) {
   const key = s.key, at = s.lastEventAt;
   convo.busy = true;
+  if (window.jwoodSimInstance) {
+    const msgs = window.jwoodSimInstance.getTranscript(key);
+    convo = { key, at, messages: msgs || [], private: false, busy: false };
+    if (sel === key) renderDetail();
+    return;
+  }
   try {
     const r = await fetch(`/api/transcript?key=${encodeURIComponent(key)}`);
     const d = await r.json().catch(() => ({}));

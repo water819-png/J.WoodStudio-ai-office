@@ -82,7 +82,26 @@
         now: now,
         lang: 'zh-TW',
         sessions: this.sessions,
-        summary: { today: { turns: 36, tokens: 188000 } }
+        summary: {
+          turns: 48,
+          tokens: 286000,
+          agents: 6,
+          byAgent: {
+            antigravity: { turns: 16, tokens: 96000 },
+            gemini: { turns: 8, tokens: 48000 },
+            claude: { turns: 8, tokens: 52000 },
+            codex: { turns: 8, tokens: 45000 },
+            copilot: { turns: 8, tokens: 45000 }
+          },
+          projects: {
+            '麻糬 (總監)': 10,
+            '椪柑 (審核)': 6,
+            '沐沐 (文案)': 8,
+            '小雅 (設計)': 8,
+            '咪咪 (影片)': 8,
+            '大叔 (研究員)': 8
+          }
+        }
       });
     }
 
