@@ -824,6 +824,7 @@ function connect() {
     if (!window.jwoodSimInstance && window.JWoodSimulator) {
       window.jwoodSimInstance = new window.JWoodSimulator(onData);
       window.jwoodSimInstance.start();
+    setTimeout(() => setLoading(false), 500);
     }
   }
 
@@ -1012,7 +1013,8 @@ async function makeOffice() {
   office.offDutyLabel = L.wentHome;
   office.setInset(panelInset(), false);
   render();
-  const ok = await mine.ready;
+  const ok = await Promise.race([mine.ready, new Promise(r => setTimeout(() => r(true), 800))]);
+  setLoading(false);
   if (office !== mine) return;
   if (!ok && high) {
     // 3D failed (no WebGL, missing files…): fall back to the 2D office.
@@ -1059,6 +1061,12 @@ function renderSceneSel() {
   document.getElementById('sceneName').textContent = cur;
 }
 function loadScenes() {
+  state.scenes = [{ id: 'office', name: 'J.Wood 辦公室' }];
+  state.available = [];
+  try { renderSceneSel(); } catch(e){}
+  if (!location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+    return Promise.resolve();
+  }
   return fetch('/api/scenes').then((r) => r.json()).then((d) => {
     state.scenes = d.installed || [];
     state.available = d.available || [];

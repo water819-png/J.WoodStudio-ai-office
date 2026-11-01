@@ -1566,7 +1566,7 @@
       if (!this.visible) return;
       this.step(dt);
       if (this.draw() !== false) {
-        if (!this.first && ++this.framesShown === 3) this.markReady(true);
+        if (++this.framesShown >= 1) this.markReady(true);
         // Capture immediately: a WebGL drawing buffer may be cleared after
         // this task. The overlay and the 3D canvas must be copied together.
         if (this.onFrame) this.onFrame(this);
