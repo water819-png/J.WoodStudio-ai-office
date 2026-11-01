@@ -520,16 +520,8 @@
         if (isWorker) {
           this.release(p);
           const desk = desks[this.deskOf.get(s.key)];
-          p.desk = desk;
+          if (p.desk !== desk || p.mode !== 'work') { p.desk = desk; this.goTo(p, desk.seat); }
           p.mode = 'work';
-          if (p.placeOnArrive || !p.x || !p.y || isNaN(p.x) || (p.x === this.plan.door.x && p.y === this.plan.door.y)) {
-            p.x = desk.seat.x;
-            p.y = desk.seat.y;
-            p.path = [];
-            p.placeOnArrive = false;
-          } else if (p.desk !== desk) {
-            this.goTo(p, desk.seat);
-          }
         } else {
           if (p.mode !== 'wander') { p.mode = 'wander'; p.desk = null; p.poi = null; p.until = 0; }
           // Someone started working at the desk this one was napping on.

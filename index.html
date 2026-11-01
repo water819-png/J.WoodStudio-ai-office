@@ -1178,10 +1178,6 @@ window.addEventListener('storage', (e) => {
   makeOffice();
   render();
 });
-applyLang(chooseLang(null));
-syncControls();
-scenesReady.then(() => makeOffice());
-connect();
 // ---- full screen: the office fills the window; agents and their recent
 // conversation live in a side panel (list first, one agent on click).
 const sideEl = document.getElementById('side');
@@ -1392,6 +1388,10 @@ if (state.full) {
   setSide(state.side && !matchMedia('(max-width: 760px)').matches, false);
   syncFull();
 }
+applyLang(chooseLang(null));
+syncControls();
+scenesReady.then(() => makeOffice());
+connect();
 
 setInterval(tickTimes, 1000);
 </script>
