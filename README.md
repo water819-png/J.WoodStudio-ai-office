@@ -1,6 +1,6 @@
-# 🐾 J. Wood Studio - AI 員工辦公室 (Virtual Office)
+# 🐾 J.Wood Studio - AI 員工辦公室 (Virtual Office)
 
-這裡是 **J. Wood Studio** 創作團隊的虛擬 3D/2D 辦公室日常。
+這裡是 **J.Wood Studio** 創作團隊的虛擬 3D/2D 辦公室日常。
 
 ---
 
@@ -15,4 +15,4 @@
 
 ---
 
-© 2026 J. Wood Studio. All rights reserved.
+© 2026 J.Wood Studio. All rights reserved.
